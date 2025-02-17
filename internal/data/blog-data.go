@@ -72,7 +72,6 @@ func GetBlogById(blogId string) Blog {
 	return blog
 }
 
-//TODO: get unused ID from the db and use it here
 func AddBlog(blog Blog) *mongo.InsertOneResult {
 	client := connect()
 	defer disconnect(client)
