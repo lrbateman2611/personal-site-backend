@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"os"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,23 +24,33 @@ type Comment struct {
 	Content 	string							`bson:"content" json:"content"`
 }
 
+var client *mongo.Client
+
+func init() {
+	var err error
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(os.Getenv("MONGO_CONNECTION_STRING")))
+	if err != nil {
+		panic(err)
+	}
+}
+
 func GetBlogs() []Blog {
-	client := connect()
-	defer disconnect(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// database and colletion code goes here
 	db := client.Database("personal-site-blog")
 	coll := db.Collection("blogs")
 
 	// find code goes here
-	cursor, err := coll.Find(context.TODO(), bson.D{})
+	cursor, err := coll.Find(ctx, bson.D{})
 	if err != nil {
 		panic(err)
 	}
 
 	var blogs []Blog
 
-	if err = cursor.All(context.TODO(), &blogs); err != nil {
+	if err = cursor.All(ctx, &blogs); err != nil {
 		panic(err)
 	}
 
@@ -47,8 +58,8 @@ func GetBlogs() []Blog {
 }
 
 func GetBlogById(blogId string) Blog {
-	client := connect()
-	defer disconnect(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	
 	// database and colletion code goes here
 	db := client.Database("personal-site-blog")
@@ -61,7 +72,7 @@ func GetBlogById(blogId string) Blog {
 	}
 
 	// find code goes here
-	result := coll.FindOne(context.TODO(), bson.D{{Key: "_id", Value: id}})
+	result := coll.FindOne(ctx, bson.D{{Key: "_id", Value: id}})
 	
 	var blog Blog
 	
@@ -73,14 +84,14 @@ func GetBlogById(blogId string) Blog {
 }
 
 func AddBlog(blog Blog) *mongo.InsertOneResult {
-	client := connect()
-	defer disconnect(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// database and colletion code goes here
 	db := client.Database("personal-site-blog")
 	coll := db.Collection("blogs")
 
-	newId, err := coll.InsertOne(context.TODO(), blog)
+	newId, err := coll.InsertOne(ctx, blog)
 	if err != nil {
 		panic(err)
 	}
@@ -88,22 +99,22 @@ func AddBlog(blog Blog) *mongo.InsertOneResult {
 }
 
 func GetComments() []Comment {
-	client := connect()
-	defer disconnect(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// database and colletion code goes here
 	db := client.Database("personal-site-blog")
 	coll := db.Collection("comments")
 
 	// find code goes here
-	cursor, err := coll.Find(context.TODO(), bson.D{})
+	cursor, err := coll.Find(ctx, bson.D{})
 	if err != nil {
 		panic(err)
 	}
 
 	var comments []Comment
 
-	if err = cursor.All(context.TODO(), &comments); err != nil {
+	if err = cursor.All(ctx, &comments); err != nil {
 		panic(err)
 	}
 
@@ -111,8 +122,8 @@ func GetComments() []Comment {
 }
 
 func GetCommentsById(blogId string) []Comment {
-	client := connect()
-	defer disconnect(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// database and colletion code goes here
 	db := client.Database("personal-site-blog")
@@ -125,14 +136,14 @@ func GetCommentsById(blogId string) []Comment {
 	}
 
 	// find code goes here
-	cursor, err := coll.Find(context.TODO(), bson.D{{Key: "blog", Value: id}})
+	cursor, err := coll.Find(ctx, bson.D{{Key: "blog", Value: id}})
 	if err != nil {
 		panic(err)
 	}
 
 	var comments []Comment
 
-	if err = cursor.All(context.TODO(), &comments); err != nil {
+	if err = cursor.All(ctx, &comments); err != nil {
 		panic(err)
 	}
 
@@ -140,35 +151,16 @@ func GetCommentsById(blogId string) []Comment {
 }
 
 func AddComment(comment Comment) *mongo.InsertOneResult {
-	client := connect()
-	defer disconnect(client)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// database and colletion code goes here
 	db := client.Database("personal-site-blog")
 	coll := db.Collection("comments")
 
-	newId, err := coll.InsertOne(context.TODO(), comment)
+	newId, err := coll.InsertOne(ctx, comment)
 	if err != nil {
 		panic(err)
 	}
 	return newId
-}
-
-func connect() *mongo.Client {
-	connectionString := os.Getenv("MONGO_CONNECTION_STRING")
-	if connectionString == "" {
-		panic("MONGO_CONNECTION_STRING must be set")
-	}
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(connectionString))
-	if err != nil {
-		panic(err)
-	}
-	return client
-}
-
-func disconnect(client *mongo.Client) {
-	err := client.Disconnect(context.TODO()); 
-	if err != nil {
-		panic(err)
-	}
 }

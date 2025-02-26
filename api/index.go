@@ -4,22 +4,25 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"example/personal-site-backend/internal/data"
+	"example/personal-site-backend/data"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RunApi() {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	router := gin.Default()
-	router.GET("/blogs", getBlogs)
-	router.GET("/blogs/:id", getBlogById)
-	router.POST("/blog", postBlog)
-
-	router.GET("/comments", getComments)
-	router.GET("/comments/:id", getCommentsById)
-	router.POST("/comment", postComment)
-
-	router.Run("localhost:8080")
+	api := router.Group("/api")
+	{
+		api.GET("/blogs", getBlogs)
+		api.GET("/blogs/:id", getBlogById)
+		api.POST("/blog", postBlog)
+	
+		api.GET("/comments", getComments)
+		api.GET("/comments/:id", getCommentsById)
+		api.POST("/comment", postComment)
+	}
+	
+	router.ServeHTTP(w, r)
 }
 
 func getBlogs(c *gin.Context) {
